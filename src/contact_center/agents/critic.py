@@ -13,6 +13,8 @@ SYSTEM = """\
 Sos QA de soporte de {company}, con mirada adversarial. Revisás la respuesta propuesta
 antes de enviarla, en estas dimensiones:
 - accuracy: ¿lo que dice está respaldado por la base de conocimiento? ¿algo inventado?
+  IMPORTANTE: si hay TRAZA DE AGENDA, los horarios ofrecidos y las reservas que figuran ahí
+  son REALES (vienen del sistema de turnos). NO los marques como "inventados" ni "sin verificar".
 - policy: ¿cumple políticas (no promete lo que no se puede, no da datos sensibles)?
 - tone: ¿empática y acorde al sentimiento del cliente? ¿voz de marca?
 - completeness: ¿responde TODAS las preguntas del cliente?
@@ -29,12 +31,17 @@ def critic(state: TicketState) -> dict:
     draft = state.get("draft", {})
     triage = state.get("triage", {})
     knowledge = state.get("knowledge", [])
+    agenda_trace = state.get("agenda_trace") or []
 
     user = (
         "RESPUESTA PROPUESTA:\n" + json.dumps(draft, ensure_ascii=False, indent=2)
         + "\n\nTRIAGE:\n" + json.dumps(triage, ensure_ascii=False, indent=2)
         + "\n\nBASE DE CONOCIMIENTO DISPONIBLE:\n" + json.dumps(knowledge, ensure_ascii=False, indent=2)
     )
+    if agenda_trace:
+        user += "\n\nTRAZA DE AGENDA (horarios/reservas REALES del sistema de turnos):\n" + json.dumps(
+            agenda_trace, ensure_ascii=False, indent=2
+        )
     review = complete_json(
         system=SYSTEM.format(company=s.company_name),
         user=user,

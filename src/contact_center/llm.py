@@ -43,6 +43,49 @@ def complete_json(
     return json.loads(_first_text(resp.content))
 
 
+def complete_with_tools(
+    *, system: str, user: str, tools: list[dict], handlers: dict, schema: dict, model: str,
+    max_tokens: int = 6000, max_iters: int = 6, effort: str = "high",
+) -> tuple[dict, list]:
+    """Loop de tool-use: el modelo puede llamar `tools` (ejecutadas por `handlers`),
+    y al terminar devuelve una respuesta final que cumple `schema`.
+
+    Devuelve (resultado_estructurado, traza_de_tools).
+    """
+    client = get_client()
+    messages: list[dict[str, Any]] = [{"role": "user", "content": user}]
+    trace: list[dict] = []
+
+    for _ in range(max_iters):
+        resp = client.messages.create(
+            model=model, max_tokens=max_tokens, system=system, messages=messages, tools=tools
+        )
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason != "tool_use":
+            break
+        results = []
+        for block in resp.content:
+            if getattr(block, "type", None) != "tool_use":
+                continue
+            handler = handlers.get(block.name)
+            out = handler(block.input) if handler else {"error": f"tool desconocida: {block.name}"}
+            trace.append({"tool": block.name, "input": block.input, "output": out})
+            results.append({"type": "tool_result", "tool_use_id": block.id,
+                            "content": json.dumps(out, ensure_ascii=False)})
+        messages.append({"role": "user", "content": results})
+
+    # Pase final: forzar la respuesta estructurada (sin tools).
+    messages.append({"role": "user",
+                     "content": "Devolvé ahora la respuesta final para el cliente en el formato JSON pedido."})
+    final = client.messages.create(
+        model=model, max_tokens=max_tokens, system=system, messages=messages,
+        output_config={"format": {"type": "json_schema", "schema": schema}, "effort": effort},
+    )
+    if final.stop_reason == "refusal":
+        raise RuntimeError(f"Claude rechazó: {final.stop_details}")
+    return json.loads(_first_text(final.content)), trace
+
+
 def research(*, system: str, user: str, model: str, max_tokens: int = 6000, max_uses: int = 6) -> str:
     """Investiga en la web (Claude web tools o Tavily). Devuelve texto con citas."""
     s = get_settings()

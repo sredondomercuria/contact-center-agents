@@ -17,6 +17,7 @@ class TicketState(TypedDict, total=False):
     triage: dict[str, Any]          # classifier: intención, sentimiento, prioridad, idioma
     knowledge: list[dict[str, Any]] # retriever: snippets de KB usados
     draft: dict[str, Any]           # responder: respuesta propuesta
+    agenda_trace: list[dict[str, Any]]  # responder: tools de agenda usadas (disponibilidad/reservas)
     review: dict[str, Any]          # critic: veredicto QA
     revision_count: int
     routing: dict[str, Any]         # router: auto_reply | escalate + motivo

@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     # Tag de ManyChat para marcar conversaciones que pasan a un humano.
     manychat_handoff_tag: str = Field(default="handoff-humano", alias="MANYCHAT_HANDOFF_TAG")
 
+    # --- Agenda propia (tool de turnos) ---
+    agenda_enabled: bool = Field(default=False, alias="AGENDA_ENABLED")
+    agenda_sedes: str = Field(default="CABA,Morón", alias="AGENDA_SEDES")
+    agenda_open_hour: int = Field(default=10, alias="AGENDA_OPEN_HOUR")
+    agenda_close_hour: int = Field(default=18, alias="AGENDA_CLOSE_HOUR")
+    agenda_slot_minutes: int = Field(default=60, alias="AGENDA_SLOT_MINUTES")
+
     # --- Persistencia ---
     database_path: str = Field(default="output/contact_center.db", alias="DATABASE_PATH")
 
@@ -83,6 +90,10 @@ class Settings(BaseSettings):
     @property
     def auth_enabled(self) -> bool:
         return bool(self.auth_password)
+
+    @property
+    def agenda_sede_list(self) -> list[str]:
+        return [s.strip() for s in self.agenda_sedes.split(",") if s.strip()]
 
 
 @lru_cache
