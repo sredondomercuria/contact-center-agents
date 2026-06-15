@@ -29,7 +29,8 @@ def _snippet(text: str, terms: set[str], width: int = 400) -> str:
     return (best or text)[:width]
 
 
-def retrieve(queries: list[str], k: int = 4) -> list[dict]:
+def retrieve(queries: list[str], k: int = 2, *, rel_threshold: float = 0.4) -> list[dict]:
+    """Top-k artículos relevantes. Descarta matches débiles con un umbral relativo al mejor."""
     kb_dir = Path(get_settings().knowledge_dir)
     if not kb_dir.exists():
         return []
@@ -54,4 +55,8 @@ def retrieve(queries: list[str], k: int = 4) -> list[dict]:
             scored.append({"title": title, "path": str(path), "snippet": _snippet(text, terms), "score": score})
 
     scored.sort(key=lambda d: d["score"], reverse=True)
-    return scored[:k]
+    if not scored:
+        return []
+    # Umbral: descarta artículos cuyo score es muy bajo respecto del mejor (ruido).
+    cutoff = max(2, scored[0]["score"] * rel_threshold)
+    return [d for d in scored if d["score"] >= cutoff][:k]

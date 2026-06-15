@@ -18,7 +18,7 @@ def produce(state: TicketState) -> dict:
     ticket = state.get("ticket", {})
 
     # La KB vive en tu repo: la recuperamos local y se la pasamos al Managed Agent.
-    kb = retrieve([f"{ticket.get('subject','')} {ticket.get('body','')}"], k=4)
+    kb = retrieve([f"{ticket.get('subject','')} {ticket.get('body','')}"], k=3)
     result = run_support_agent(ticket=ticket, kb_snippets=kb)
     if result and result.get("draft"):
         return {

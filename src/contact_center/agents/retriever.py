@@ -34,7 +34,7 @@ def retriever(state: TicketState) -> dict:
         model=s.model_retriever,
     )
     queries = data.get("queries") or [f"{ticket.get('subject','')} {ticket.get('body','')}"]
-    snippets = retrieve(queries, k=4)
+    snippets = retrieve(queries, k=2)
     return {
         "knowledge": snippets,
         "log": [f"retriever: {len(snippets)} artículos KB ({len(queries)} consultas)"],
