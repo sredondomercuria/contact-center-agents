@@ -52,6 +52,13 @@ class Settings(BaseSettings):
     # --- Notificaciones ---
     slack_webhook_url: str = Field(default="", alias="SLACK_WEBHOOK_URL")
 
+    # --- ManyChat (omnicanal: WhatsApp/Instagram/Facebook/TikTok/Telegram) ---
+    manychat_api_key: str = Field(default="", alias="MANYCHAT_API_KEY")
+    # Token que ManyChat envía como header X-Webhook-Token (protege /webhooks/manychat).
+    manychat_webhook_token: str = Field(default="", alias="MANYCHAT_WEBHOOK_TOKEN")
+    # Tag de ManyChat para marcar conversaciones que pasan a un humano.
+    manychat_handoff_tag: str = Field(default="handoff-humano", alias="MANYCHAT_HANDOFF_TAG")
+
     # --- Persistencia ---
     database_path: str = Field(default="output/contact_center.db", alias="DATABASE_PATH")
 

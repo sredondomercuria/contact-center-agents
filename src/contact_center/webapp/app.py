@@ -12,7 +12,7 @@ from pathlib import Path
 
 import markdown as _md
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, Form, Header, HTTPException, Request
+from fastapi import BackgroundTasks, Body, FastAPI, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,14 +21,14 @@ from starlette.middleware.sessions import SessionMiddleware
 from .. import storage
 from ..config import get_settings
 from ..gcp_secrets import bootstrap_secrets
-from ..services import process_open_tickets, resolve_run, save_draft_edits
+from ..services import handle_inbound_message, process_open_tickets, resolve_run, save_draft_edits
 
 load_dotenv()
 bootstrap_secrets()
 storage.init_db()
 Path(get_settings().output_dir).mkdir(parents=True, exist_ok=True)
 
-PUBLIC_PATHS = {"/login", "/health", "/tasks/run-batch"}
+PUBLIC_PATHS = {"/login", "/health", "/tasks/run-batch", "/webhooks/manychat"}
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -128,6 +128,25 @@ def scheduled_run(background: BackgroundTasks, x_scheduler_token: str = Header(d
     if token and x_scheduler_token != token:
         raise HTTPException(401, "token inválido")
     background.add_task(_kickoff)
+    return JSONResponse({"status": "accepted"}, status_code=202)
+
+
+@app.post("/webhooks/manychat")
+def manychat_webhook(
+    background: BackgroundTasks,
+    payload: dict = Body(default={}),
+    x_webhook_token: str = Header(default=""),
+):
+    """Recibe un mensaje entrante (External Request de un Flow de ManyChat).
+
+    Procesa en segundo plano (la respuesta se envía por la Send API de ManyChat desde el
+    executor, respetando DRY_RUN) y responde rápido para no agotar el timeout de ManyChat.
+    """
+    s = get_settings()
+    token = s.manychat_webhook_token or s.scheduler_token
+    if token and x_webhook_token != token:
+        raise HTTPException(401, "token inválido")
+    background.add_task(handle_inbound_message, payload)
     return JSONResponse({"status": "accepted"}, status_code=202)
 
 

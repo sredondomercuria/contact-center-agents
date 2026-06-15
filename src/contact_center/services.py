@@ -33,6 +33,40 @@ def run_for_ticket(ticket: dict) -> dict:
     return {"run_id": run_id, "state": state}
 
 
+def payload_to_ticket(payload: dict) -> dict | None:
+    """Convierte el payload de un External Request de ManyChat en un ticket.
+
+    Configurá el cuerpo del External Request en tu Flow de ManyChat, por ejemplo:
+      {"subscriber_id":"{{contact_id}}", "channel":"whatsapp",
+       "message":"{{last_input_text}}", "name":"{{first_name}} {{last_name}}"}
+    El parser tolera nombres alternativos de campo.
+    """
+    sub = payload.get("subscriber_id") or payload.get("contact_id") or payload.get("id")
+    msg = payload.get("message") or payload.get("text") or payload.get("last_input_text") or ""
+    if not sub or not str(msg).strip():
+        return None
+    subchannel = payload.get("channel") or "manychat"
+    name = payload.get("name") or payload.get("first_name") or ""
+    return {
+        "id": str(sub),
+        "subject": f"Chat ({subchannel})",
+        "body": str(msg),
+        "requester": name,
+        "status": "open",
+        "channel": "manychat",
+        "subchannel": subchannel,
+    }
+
+
+def handle_inbound_message(payload: dict) -> dict | None:
+    """Procesa un mensaje entrante de ManyChat (omnicanal). Devuelve {run_id, state} o None."""
+    ticket = payload_to_ticket(payload)
+    if not ticket:
+        print("[inbound] payload sin subscriber_id o mensaje; ignorado.")
+        return None
+    return run_for_ticket(ticket)
+
+
 def process_open_tickets(limit: int | None = None) -> list[dict]:
     """Trae tickets abiertos del CRM y procesa cada uno. Devuelve resúmenes."""
     s = get_settings()

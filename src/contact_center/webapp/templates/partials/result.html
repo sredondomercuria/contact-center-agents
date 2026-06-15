@@ -6,7 +6,7 @@
     {% if res.dry_run %}
       <p class="text-amber-600">DRY_RUN: simulación — {{ res.preview.would }} (estado {{ res.preview.new_status }})</p>
     {% else %}
-      <p>CRM: <span class="{{ 'text-emerald-700' if res.crm else 'text-rose-700' }}">{{ res.crm or 'error' }}</span></p>
+      <p>Entrega: <span class="{{ 'text-emerald-700' if res.delivery else 'text-rose-700' }}">{{ res.delivery or 'error' }}</span>{% if res.channel %} <span class="text-slate-400">({{ res.channel }})</span>{% endif %}</p>
       {% if res.notified %}<p class="text-emerald-700">Notificado a Slack ✓</p>{% endif %}
       {% if res.errors %}<p class="text-rose-600">Errores: {{ res.errors | join('; ') }}</p>{% endif %}
     {% endif %}

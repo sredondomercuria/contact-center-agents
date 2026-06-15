@@ -17,6 +17,8 @@ actualiza el CRM**. Con **dashboard de revisión/aprobación** (human-in-the-loo
   Claude, con *fallback* local. (`AGENT_RUNTIME`)
 - **CRM real y pluggable**: **Zendesk**, **HubSpot** y un cliente **REST genérico**
   (interfaz común `get_crm()`).
+- **Omnicanal vía ManyChat**: WhatsApp, Instagram, Facebook Messenger, TikTok y Telegram
+  — webhook de entrada (`/webhooks/manychat`) + respuesta por la Send API. Ver [docs/09](docs/09-manychat.md).
 - **RAG** sobre una base de conocimiento (`knowledge_base/`).
 - **Dashboard FastAPI + HTMX** con **login**: cola de respuestas para revisar y aprobar.
 - **Escalamiento** a humano vía Slack. **Persistencia** SQLite.
@@ -121,7 +123,8 @@ export SCHEDULER_TOKEN=...; bash deploy/scheduler.sh   # procesa tickets cada 15
 [01 Arquitectura](docs/01-arquitectura.md) · [02 Instalación](docs/02-instalacion.md) ·
 [03 Skills](docs/03-skills.md) · [04 Agentes](docs/04-agentes-langgraph.md) ·
 [05 CRM](docs/05-integraciones-crm.md) · [06 Scheduling & GCP](docs/06-scheduling-gcp.md) ·
-[07 Cowork](docs/07-cowork.md) · [08 Mejores prácticas](docs/08-mejores-practicas.md)
+[07 Cowork](docs/07-cowork.md) · [08 Mejores prácticas](docs/08-mejores-practicas.md) ·
+[09 ManyChat (omnicanal)](docs/09-manychat.md)
 
 ## 🔐 Seguridad
 - Secretos en `.env` (local) / **Secret Manager** (GCP). En el repo, sólo `.env.example`.
