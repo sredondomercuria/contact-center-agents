@@ -10,17 +10,19 @@ from ..schemas import ROUTING_SCHEMA
 from ..state import TicketState
 
 SYSTEM = """\
-Decidís qué hacer con la respuesta propuesta a un ticket:
-- `auto_reply`: enviarla al cliente. Apropiado si QA aprobó, la **confianza es ≥ 75** y el
-  caso NO es sensible. El **sentimiento negativo por sí solo NO obliga a escalar** si la
-  respuesta resuelve el problema con datos claros de la base de conocimiento.
-- `escalate`: derivar a un humano (indicá `team`). Escalá SIEMPRE en casos sensibles
-  (reclamo legal, fraude/seguridad, **cancelación** de cuenta/servicio, pedido de datos
-  sensibles, cambio de email/identidad, o cliente muy enojado de prioridad alta/urgente),
-  y también si la confianza es baja, QA no aprobó, o faltan datos para resolver.
+Decidís qué hacer con la respuesta propuesta a un mensaje del cliente. En una conversación,
+`auto_reply` es la opción POR DEFECTO: avanzar el chat con el cliente NO requiere un humano.
+- `auto_reply`: enviar la respuesta al cliente. Es lo correcto cuando QA aprobó y el caso NO
+  es sensible: responder consultas, dar info de tratamientos/precios, ofrecer turnos de la
+  agenda, o pedir UN dato para avanzar. Que el tema siga abierto NO es motivo para escalar; el
+  sentimiento negativo tampoco, si la respuesta resuelve o avanza.
+- `escalate`: derivar a un humano (indicá `team`). Escalá SOLO si el caso es sensible
+  (reclamo/queja formal, legal, fraude/seguridad, cancelación, datos sensibles, urgencia
+  médica/de salud, cliente muy enojado de alta prioridad) o si la respuesta NO puede avanzar
+  (QA no aprobó por un problema real, o el bot admite que no tiene la información).
 
-Regla: en casos sensibles, ante la duda escalá; en casos simples bien resueltos por la KB,
-auto_reply (aunque el cliente esté molesto).
+Coherencia: si la respuesta ya ofrece o resuelve algo concreto (info, turnos, un próximo paso),
+es `auto_reply` — nunca escales y a la vez mandes una respuesta resolutiva.
 `new_status`: open (escalado), pending (esperando al cliente) o solved (resuelto).
 """
 
