@@ -21,6 +21,14 @@ CREATE TABLE IF NOT EXISTS runs (
     updated_at  TEXT NOT NULL,
     state_json  TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS conv_messages (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    contact_id  TEXT NOT NULL,
+    role        TEXT NOT NULL,            -- 'client' | 'assistant'
+    text        TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_conv_contact ON conv_messages(contact_id);
 """
 
 
@@ -33,7 +41,7 @@ def _connect() -> sqlite3.Connection:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
-    conn.execute(_SCHEMA)
+    conn.executescript(_SCHEMA)
     return conn
 
 
@@ -89,3 +97,28 @@ def update_state(run_id: int, state: dict) -> None:
 def set_status(run_id: int, status: str) -> None:
     with _connect() as conn:
         conn.execute("UPDATE runs SET status = ?, updated_at = ? WHERE id = ?", (status, _now(), run_id))
+
+
+# --- Memoria de conversación (multi-turno por contacto) -----------------------
+
+def append_message(contact_id: str, role: str, text: str) -> None:
+    """Guarda un turno de la conversación (role: 'client' | 'assistant')."""
+    if not contact_id or not (text or "").strip():
+        return
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO conv_messages (contact_id, role, text, created_at) VALUES (?,?,?,?)",
+            (str(contact_id), role, text, _now()),
+        )
+
+
+def conversation_history(contact_id: str, limit: int = 20) -> list[dict]:
+    """Últimos `limit` turnos del contacto, en orden cronológico."""
+    if not contact_id:
+        return []
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT role, text FROM conv_messages WHERE contact_id = ? ORDER BY id DESC LIMIT ?",
+            (str(contact_id), limit),
+        ).fetchall()
+    return [{"role": r["role"], "text": r["text"]} for r in reversed(rows)]

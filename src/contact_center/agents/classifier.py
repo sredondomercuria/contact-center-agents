@@ -13,6 +13,8 @@ SYSTEM = """\
 Sos analista de soporte de {company}. Clasificás un ticket entrante: intención (tema),
 sentimiento, prioridad, idioma, un resumen breve y las preguntas concretas a responder.
 Sé preciso; la prioridad refleja urgencia e impacto para el cliente.
+Si el ticket trae `history`, es el historial de la conversación: interpretá el último
+mensaje (`body`) en ese contexto (puede ser una respuesta corta a algo ya preguntado).
 """
 
 

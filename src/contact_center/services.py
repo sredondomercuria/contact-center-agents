@@ -59,12 +59,25 @@ def payload_to_ticket(payload: dict) -> dict | None:
 
 
 def handle_inbound_message(payload: dict) -> dict | None:
-    """Procesa un mensaje entrante de ManyChat (omnicanal). Devuelve {run_id, state} o None."""
+    """Procesa un mensaje entrante de ManyChat (omnicanal), con memoria de conversación.
+
+    Carga el historial previo del contacto, lo adjunta al ticket (los agentes lo ven),
+    y guarda este mensaje + la respuesta para sostener el multi-turno.
+    """
     ticket = payload_to_ticket(payload)
     if not ticket:
         print("[inbound] payload sin subscriber_id o mensaje; ignorado.")
         return None
-    return run_for_ticket(ticket)
+
+    contact_id = ticket["id"]
+    ticket["history"] = storage.conversation_history(contact_id)   # turnos previos (contexto)
+    storage.append_message(contact_id, "client", ticket["body"])   # registra el mensaje entrante
+
+    result = run_for_ticket(ticket)
+
+    reply = (result["state"].get("draft") or {}).get("reply", "")
+    storage.append_message(contact_id, "assistant", reply)         # registra nuestra respuesta
+    return result
 
 
 def process_open_tickets(limit: int | None = None) -> list[dict]:
