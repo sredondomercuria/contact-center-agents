@@ -1,0 +1,14 @@
+{% set res = res if res is defined else (run.state.result or None) %}
+{% if not res %}
+  <p class="text-xs text-slate-400 mt-2">Sin ejecutar todavía.</p>
+{% else %}
+  <div class="text-xs space-y-1 mt-2">
+    {% if res.dry_run %}
+      <p class="text-amber-600">DRY_RUN: simulación — {{ res.preview.would }} (estado {{ res.preview.new_status }})</p>
+    {% else %}
+      <p>CRM: <span class="{{ 'text-emerald-700' if res.crm else 'text-rose-700' }}">{{ res.crm or 'error' }}</span></p>
+      {% if res.notified %}<p class="text-emerald-700">Notificado a Slack ✓</p>{% endif %}
+      {% if res.errors %}<p class="text-rose-600">Errores: {{ res.errors | join('; ') }}</p>{% endif %}
+    {% endif %}
+  </div>
+{% endif %}

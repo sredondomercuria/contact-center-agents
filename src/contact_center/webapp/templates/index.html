@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center justify-between mb-5">
+  <div>
+    <h1 class="text-xl font-semibold">Cola de respuestas</h1>
+    <p class="text-sm text-slate-500">Revisá, editá y aprobá las respuestas antes de enviarlas al cliente.</p>
+  </div>
+  <form method="post" action="/run">
+    <button class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow">
+      ↻ Procesar tickets abiertos
+    </button>
+  </form>
+</div>
+
+{% if not runs %}
+  <div class="bg-white border border-dashed border-slate-300 rounded-xl p-10 text-center text-slate-500">
+    No hay tickets procesados. Tocá <b>“Procesar tickets abiertos”</b> (trae del CRM y genera respuestas).
+    <p class="text-xs mt-2">Corre en segundo plano (unos minutos). Recargá la página.</p>
+  </div>
+{% else %}
+  <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-100 text-slate-600 text-left">
+        <tr>
+          <th class="px-4 py-2">#</th><th class="px-4 py-2">Ticket</th><th class="px-4 py-2">Asunto</th>
+          <th class="px-4 py-2">Prioridad</th><th class="px-4 py-2">Acción</th><th class="px-4 py-2">Estado</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in runs %}
+        <tr class="border-t border-slate-100 hover:bg-slate-50">
+          <td class="px-4 py-2 text-slate-400">{{ r.id }}</td>
+          <td class="px-4 py-2">{{ r.ticket_id }}</td>
+          <td class="px-4 py-2">{{ r.subject or "—" }}</td>
+          <td class="px-4 py-2">{{ r.priority or "—" }}</td>
+          <td class="px-4 py-2">{{ r.action or "—" }}</td>
+          <td class="px-4 py-2">
+            {% set c = {'running':'bg-blue-100 text-blue-800 animate-pulse','drafted':'bg-amber-100 text-amber-800','resolved':'bg-emerald-100 text-emerald-800','failed':'bg-rose-100 text-rose-800'} %}
+            {% set lbl = {'running':'procesando…','drafted':'a revisar'} %}
+            <span class="text-xs px-2 py-1 rounded-full {{ c.get(r.status,'bg-slate-100 text-slate-700') }}">{{ lbl.get(r.status, r.status) }}</span>
+          </td>
+          <td class="px-4 py-2 text-right"><a href="/runs/{{ r.id }}" class="text-indigo-600 hover:underline">Revisar →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if runs | selectattr('status','equalto','running') | list %}
+    <p class="text-sm text-blue-600 mt-4">⏳ Procesando tickets… la página se actualiza sola.</p>
+    <script>setTimeout(() => location.reload(), 6000);</script>
+  {% endif %}
+{% endif %}
+{% endblock %}

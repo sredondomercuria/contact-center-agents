@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Contact Center · Soporte{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+  <style>
+    .prose-reply p { margin:.5rem 0; line-height:1.55; }
+    .prose-reply ul { list-style:disc; margin:.4rem 0 .4rem 1.2rem; }
+    .prose-reply a { color:#2563eb; text-decoration:underline; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <header class="bg-indigo-900 text-white">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="font-semibold tracking-tight">🎧 Contact Center · Soporte</a>
+      <span class="text-xs text-indigo-200 flex items-center gap-3">
+        <span>{{ settings.company_name }} · runtime: <b>{{ settings.agent_runtime }}</b> · DRY_RUN: <b>{{ settings.dry_run }}</b></span>
+        {% if request.session.get('user') %}
+          <a href="/logout" class="underline hover:text-white">salir ({{ request.session.get('user') }})</a>
+        {% endif %}
+      </span>
+    </div>
+  </header>
+  <main class="max-w-5xl mx-auto px-4 py-6">{% block content %}{% endblock %}</main>
+  <footer class="max-w-5xl mx-auto px-4 py-8 text-xs text-slate-400">
+    contact-center-agents · LangGraph + Claude · CRM: {{ settings.crm_provider }}
+  </footer>
+</body>
+</html>

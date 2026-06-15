@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Ticket {{ run.ticket_id }}{% endblock %}
+{% block content %}
+{% set st = run.state %}
+{% set ticket = st.ticket or {} %}
+{% set triage = st.triage or {} %}
+{% set draft = st.draft or {} %}
+{% set review = st.review or {} %}
+{% set routing = st.routing or {} %}
+
+<a href="/" class="text-sm text-indigo-600 hover:underline">← Volver a la cola</a>
+
+<div class="flex items-start justify-between mt-2 mb-4">
+  <div>
+    <h1 class="text-xl font-semibold">{{ ticket.subject or "(ticket sin asunto)" }}</h1>
+    <p class="text-slate-500 text-sm">Ticket {{ run.ticket_id }} · {{ triage.intent }} · prioridad {{ triage.priority }} · {{ triage.sentiment }}</p>
+  </div>
+  <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">#{{ run.id }} · {{ run.status }}</span>
+</div>
+
+<div class="grid md:grid-cols-3 gap-6">
+  <section class="md:col-span-2 space-y-4">
+    <!-- Mensaje del cliente -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <h3 class="font-medium text-sm mb-1">Mensaje del cliente</h3>
+      <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ ticket.body }}</p>
+    </div>
+
+    <!-- Respuesta propuesta (editable) -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <h3 class="font-medium text-sm mb-2">Respuesta propuesta</h3>
+      <div class="prose-reply text-sm border border-slate-100 rounded-lg p-3 bg-slate-50">{{ draft.reply | md | safe }}</div>
+      {% if draft.internal_note %}
+        <p class="text-xs text-slate-500 mt-2"><b>Nota interna:</b> {{ draft.internal_note }}</p>
+      {% endif %}
+      <details class="mt-3">
+        <summary class="cursor-pointer text-sm font-medium">✏️ Editar</summary>
+        <form method="post" action="/runs/{{ run.id }}/edit" class="mt-2 space-y-2">
+          <textarea name="reply" rows="8" class="w-full border rounded-lg px-3 py-2 text-sm">{{ draft.reply }}</textarea>
+          <textarea name="internal_note" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Nota interna">{{ draft.internal_note }}</textarea>
+          <button class="bg-slate-800 text-white text-sm px-4 py-2 rounded-lg">Guardar</button>
+        </form>
+      </details>
+    </div>
+  </section>
+
+  <aside class="space-y-4">
+    <!-- Resolución -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <h3 class="font-medium text-sm mb-2">Resolución</h3>
+      <p class="text-sm">Sugerido: <b class="{{ 'text-emerald-700' if routing.action=='auto_reply' else 'text-amber-700' }}">{{ routing.action }}</b></p>
+      <p class="text-xs text-slate-500 mt-1">{{ routing.reason }}</p>
+      <div id="res">{% include "partials/result.html" with context %}</div>
+      <form hx-post="/runs/{{ run.id }}/approve" hx-target="#res" hx-swap="innerHTML"
+            hx-confirm="¿Ejecutar de verdad en el CRM?" class="mt-3">
+        <button class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg">
+          ✅ Aprobar y ejecutar
+        </button>
+      </form>
+      <p class="text-[11px] text-slate-400 mt-2">Responde/escala en {{ settings.crm_provider }}, ignorando DRY_RUN.</p>
+    </div>
+
+    <!-- QA -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <h3 class="font-medium text-sm mb-2">QA</h3>
+      <p class="text-sm">Veredicto: <b class="{{ 'text-emerald-700' if review.verdict=='approved' else 'text-amber-700' }}">{{ review.verdict }}</b> · score {{ review.score }}</p>
+      <ul class="mt-2 space-y-1 text-xs text-slate-600">
+        {% for i in review.issues or [] %}<li>• <b>[{{ i.severity }}/{{ i.type }}]</b> {{ i.detail }}</li>{% endfor %}
+      </ul>
+    </div>
+
+    <!-- KB usada -->
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <h3 class="font-medium text-sm mb-2">Base de conocimiento</h3>
+      {% for k in st.knowledge or [] %}
+        <p class="text-xs text-slate-700 border-t border-slate-100 pt-1 mt-1 first:border-0 first:mt-0 first:pt-0"><b>{{ k.title }}</b></p>
+      {% else %}<p class="text-xs text-slate-400">Sin artículos.</p>{% endfor %}
+    </div>
+  </aside>
+</div>
+{% endblock %}
